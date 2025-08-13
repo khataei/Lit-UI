@@ -31,12 +31,17 @@ cd Lit-UI
 pip install -r requirements.txt
 ```
 
-3. **Set up your API keys**
-```
-Copy config_example.cfg → config.cfg
-Edit config.cfg and add your real API keys.
-cp config_example.cfg config.cfg
-```
+=## 🔑 Setting Up Your API Keys
+
+Lit‑UI needs your own API keys for OpenAI, Azure OpenAI, or OpenRouter.  
+These keys are stored in a file called `config.cfg` which **must never** be uploaded to GitHub.
+
+### 1. Locate the example config file
+In the project folder, you’ll find:
+`config_example.cfg`
+Open config.cfg in any text editor (VS Code, Notepad, etc.) and replace the placeholder text with your real API keys and endpoints.
+
+
 
 ## ▶️ Usage
 Run the app from the project folder:
