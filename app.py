@@ -109,7 +109,35 @@ def generate_chat_filename(client, deployment, first_user_message):
     
     # Add date & time prefix
     timestamp = get_timestamp_str()
-    return f"{timestamp}_{name}_{deployment[:6]}.json"
+    return f"{name}_{deployment[:6]}.json"
+
+def rename_conversation(old_filename, new_name):
+    """Renames the whole conversation file name to a user-chosen name."""
+    # Remove leading/trailing spaces
+    new_name = new_name.strip()
+    if not new_name:
+        return False, "Name cannot be empty."
+
+    # Ensure .json extension
+    if not new_name.lower().endswith(".json"):
+        new_name += ".json"
+
+    # Sanitize minimally to avoid OS conflicts
+    new_name = re.sub(r'[<>:"/\\|?*]', '', new_name)  # Remove illegal filename chars
+
+    old_path = os.path.join(CHATS_FOLDER, old_filename)
+    new_path = os.path.join(CHATS_FOLDER, new_name)
+
+    if os.path.exists(new_path):
+        return False, "A conversation with this name already exists."
+
+    try:
+        os.rename(old_path, new_path)
+        if "chat_filename" in st.session_state and st.session_state["chat_filename"] == old_filename:
+            st.session_state["chat_filename"] = new_name
+        return True, new_name
+    except Exception as e:
+        return False, str(e)
 
 # --- Adjust save_conversation to incorporate this ---
 def save_conversation(messages, client, deployment):
@@ -132,7 +160,7 @@ def save_conversation(messages, client, deployment):
 # --- Utility to list saved conversations in the chats folder, sorted by date descending ---
 def list_saved_conversations():
     files = [f for f in os.listdir(CHATS_FOLDER) if f.endswith(".json")]
-    files.sort(reverse=True)
+    files.sort(key=lambda f: os.path.getmtime(os.path.join(CHATS_FOLDER, f)), reverse=True)
     return files
 
 # --- Utility to load a conversation from file ---
@@ -150,6 +178,30 @@ def read_file_content(uploaded_file):
     elif uploaded_file.type == "text/plain":
         return uploaded_file.getvalue().decode('utf-8')
     return None
+def list_trash_conversations():
+    files = [f for f in os.listdir(TRASH_FOLDER) if f.endswith(".json")]
+    files.sort(key=lambda f: os.path.getmtime(os.path.join(TRASH_FOLDER, f)), reverse=True)
+    return files
+
+def restore_conversation(filename):
+    """Move the file from trash back to chats."""
+    source_path = os.path.join(TRASH_FOLDER, filename)
+    target_path = os.path.join(CHATS_FOLDER, filename)
+    if os.path.exists(source_path):
+        if os.path.exists(target_path):
+            return False, "A conversation with this name already exists in Chats."
+        shutil.move(source_path, target_path)
+        return True, None
+    return False, "File not found in trash."
+
+def delete_permanently(filename):
+    """Delete the file entirely from the trash folder."""
+    file_path = os.path.join(TRASH_FOLDER, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return True, None
+    return False, "File not found."
+
 
 # Function to format conversation for download
 def format_conversation_for_download(messages):
@@ -243,7 +295,12 @@ if "messages" not in st.session_state:
 
         
 # Sidebar tabs
-tab_convos, tab_settings, tab_uploads = st.sidebar.tabs(["💾 History", "🔧 Model Settings", "📁 File Uploads" ])
+tab_convos, tab_settings, tab_uploads, tab_trash = st.sidebar.tabs([
+    "💾 History", 
+    "🔧 Model Settings", 
+    "📁 File Uploads",
+    "🗑 Trash"
+])
 
 with tab_settings:
     st.markdown("#### System Prompt")
@@ -313,30 +370,113 @@ with tab_convos:
     except:
         filtered_df = pd.DataFrame()
     if not filtered_df.empty:
+        if "editing_index" not in st.session_state:
+            st.session_state["editing_index"] = None
+
         for idx, row in filtered_df.iterrows():
-            cols = st.columns([8, 1, 1])
+            is_active = (
+                "chat_filename" in st.session_state
+                and st.session_state["chat_filename"] == row['File']
+            )
+
+            cols = st.columns([6, 1, 1, 1])
             with cols[0]:
-                st.write(row['Name'])
+                if st.session_state["editing_index"] == idx:
+                    new_name_input = st.text_input(
+                        "Edit name",
+                        value=row['Name'],
+                        key=f"rename_input_{idx}"
+                    )
+                    if st.button("💾", key=f"save_{idx}"):
+                        success, msg = rename_conversation(row['File'], new_name_input)
+                        if success:
+                            st.session_state["editing_index"] = None
+                            st.rerun()
+                        else:
+                            st.error(f"Rename failed: {msg}")
+                    if st.button("❌", key=f"cancel_{idx}"):
+                        st.session_state["editing_index"] = None
+                else:
+                    display_text = f"{row['Name']} ✅" if is_active else row['Name']
+                    st.markdown(display_text)
             with cols[1]:
                 if st.button("🔄", key=f"load_{row['File']}"):
                     st.session_state["messages"] = load_conversation(row['File'])
                     st.session_state["chat_filename"] = row['File']
                     st.rerun()
             with cols[2]:
+                if st.button("✏️", key=f"edit_{idx}"):
+                    st.session_state["editing_index"] = idx
+            with cols[3]:
                 if st.button("🗑️", key=f"delete_{row['File']}"):
                     moved = move_to_trash(row['File'])
                     if moved:
                         st.success(f"Moved {row['File']} to trash.")
-                        if (
-                            "chat_filename" in st.session_state and
-                            st.session_state["chat_filename"] == row['File']
-                        ):
+                        if is_active:
                             del st.session_state["chat_filename"]
                         st.rerun()
                     else:
                         st.warning(f"File {row['File']} not found.")
     else:
         st.info("No conversations found or no match for search.")
+
+
+with tab_trash:
+    st.markdown("### 🗑 Deleted Conversations")
+    trash_files = list_trash_conversations()
+    if trash_files:
+        df_trash = pd.DataFrame({
+            'Name': [f[:-5] if f.endswith('.json') else f for f in trash_files],
+            'File': trash_files
+        })
+
+        search_term_trash = st.text_input("Search trashed conversations", "")
+        try:
+            filtered_trash = df_trash[df_trash['Name'].str.contains(search_term_trash, case=False, regex=False)]
+        except:
+            filtered_trash = pd.DataFrame()
+
+        if not filtered_trash.empty:
+            for idx, row in filtered_trash.iterrows():
+                cols = st.columns([5, 1, 1, 1])
+                with cols[0]:
+                    st.write(row['Name'])
+
+                # PREVIEW
+                with cols[1]:
+                    if st.button("👁️", key=f"preview_trash_{row['File']}"):
+                        filepath = os.path.join(TRASH_FOLDER, row['File'])
+                        with open(filepath, "r", encoding="utf-8") as f:
+                            messages = json.load(f)
+                        st.session_state["messages"] = messages
+                        st.session_state["preview_only"] = True  # mark that this isn't restored
+
+                # RESTORE
+                with cols[2]:
+                    if st.button("♻️", key=f"restore_{row['File']}"):
+                        success, msg = restore_conversation(row['File'])
+                        if success:
+                            st.success(f"Restored {row['File']} back to conversations.")
+                            st.rerun()
+                        else:
+                            st.error(msg)
+
+                # PERMANENT DELETE
+                with cols[3]:
+                    if st.button("❌", key=f"delete_trash_{row['File']}"):
+                        success, msg = delete_permanently(row['File'])
+                        if success:
+                            st.warning(f"Permanently deleted {row['File']}.")
+                            st.rerun()
+                        else:
+                            st.error(msg)
+
+        else:
+            st.info("No trashed conversations found or no match.")
+
+    else:
+        st.info("Trash is empty.")
+
 
 # Add global buttons to the sidebar ("Download", "Clear History") AFTER tabs
 col1, col2 = st.sidebar.columns(2)
@@ -355,7 +495,7 @@ if col1.button("📥 Download Conversation"):
     else:
         st.sidebar.info("Start a conversation before downloading.")
 # Clear button
-if col2.button("New Chat"):
+if col2.button("📝 New Chat"):
     st.session_state.messages = [{"role": "assistant", 
                                 "content": "Hello! You can upload CSV or TXT files and ask me questions about them."}]
     st.session_state['file_contents'] = {}

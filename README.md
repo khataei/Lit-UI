@@ -9,10 +9,12 @@ Chat with powerful language models, upload files (CSV, TXT, images) for contextu
 - 💬 **Multi-LLM Chat** – Switch instantly between OpenAI, Azure OpenAI, and OpenRouter models
 - 📝 **Custom System Prompts** – Change AI behavior dynamically from the UI
 - 📁 **File Upload Support** – CSV, TXT, and Image uploads for in-context AI responses
-- 💾 **Conversation History** – Save, load, search, and delete chats
-- 🗑️ **Trash Management** – Restore or permanently remove old conversations
+- 💾 **Conversation History** – Save, load, search, rename, and delete chats
+- ✅ **Active Chat Indicator** – See which conversation is currently active in History
+- 🗑️ **Trash Management** – Preview deleted chats, restore them, or permanently remove them
 - 📥 **Export Chats** – Download conversations as plain text
 - 🔄 **Automatic Saving** – Optional auto-save after each assistant reply
+- 🔍 **Sorted by Last Updated** – Chat history lists newest conversations first
 - 🛡️ **Safe Rendering** – Sanitized AI responses to prevent HTML injection
 - 🎯 **Minimal Setup** – Just plug in your API keys and start chatting
 
@@ -87,5 +89,12 @@ No arbitrary code execution from user input
 - 📊 Richer CSV analytics in responses
 - 📜 License
 
+## 📜 Changelog
+### v1.1.0 — 2024-06-xx
+- Added renaming of saved conversations
+- Added active conversation ✅ indicator
+- Added Trash tab with preview, restore, and permanent delete
+- Sorted conversations by last modified date
+- Simplified saved filename format
 
 This project is licensed under the MIT License — see the LICENSE file for details.
