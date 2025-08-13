@@ -33,10 +33,17 @@ cd Lit-UI
 pip install -r requirements.txt
 ```
 
-3. **Set up your API keys**
-Copy config_example.cfg → config.cfg
-Edit config.cfg and add your real API keys.
-cp config_example.cfg config.cfg
+## 🔑 Setting Up Your API Keys
+
+Lit‑UI needs your own API keys for OpenAI, Azure OpenAI, or OpenRouter.  
+These keys are stored in a file called `config.cfg` which **must never** be uploaded to GitHub.
+
+
+- In the project folder, you’ll find: `config_example.cfg`  
+- Rename this file to `config.cfg`  
+- Open `config.cfg` in any text editor and replace the placeholder text with your real API keys and endpoints.
+
+
 
 ## ▶️ Usage
 Run the app from the project folder:
@@ -47,8 +54,9 @@ Open in your browser:
 http://localhost:8501
 
 ## ⚙️ Config File Example
-config.cfg (not committed to GitHub — keep your keys secret)
+`config.cfg` (**not committed to GitHub — keep your keys secret**)
 
+```ini
 [API_KEYS]
 GPT4O_AZURE_API_KEY = your_gpt4o_key
 GPT4O_AZURE_API_URL = https://your-azure-endpoint
@@ -61,9 +69,11 @@ GPT4.1_AZURE_API_VERSION = 2024-xx-xx
 GPT5_API_VERSION = 2024-xx-xx
 
 OR_API_KEY = your_openrouter_key
+```
 
 
 ## 📂 Project Structure
+```ini
 Lit-UI/
 ├── app.py                 # Main Streamlit app
 ├── config_example.cfg     # Template config file
@@ -73,13 +83,13 @@ Lit-UI/
 ├── .gitignore             # Ignore secrets & cache files
 ├── chats/                 # Saved conversation history
 └── trash/                 # Deleted chats
-
+```
 ## 🛡 Security Notes
-API keys are never hardcoded — you must provide your own in config.cfg
-config.cfg is ignored via .gitignore so it’s never uploaded to GitHub
-AI responses are HTML-sanitized before rendering to prevent malicious injection
-Uploaded files are stored locally and never sent anywhere except the AI APIs you use
-No arbitrary code execution from user input
+API keys are never hardcoded — you must provide your own in config.cfg  
+config.cfg is ignored via .gitignore so it’s never uploaded to GitHub  
+AI responses are HTML-sanitized before rendering to prevent malicious injection  
+Uploaded files are stored locally and never sent anywhere except the AI APIs you use  
+No arbitrary code execution from user input  
 
 
 ## 📌 Roadmap
@@ -87,7 +97,6 @@ No arbitrary code execution from user input
 - 🔊 Text-to-speech for AI responses
 - 🖼 AI image generation integration
 - 📊 Richer CSV analytics in responses
-- 📜 License
 
 ## 📜 Changelog
 ### v1.1.0 — 2024-06-xx
