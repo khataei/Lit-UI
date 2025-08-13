@@ -32,9 +32,11 @@ pip install -r requirements.txt
 ```
 
 3. **Set up your API keys**
+```
 Copy config_example.cfg → config.cfg
 Edit config.cfg and add your real API keys.
 cp config_example.cfg config.cfg
+```
 
 ## ▶️ Usage
 Run the app from the project folder:
@@ -76,11 +78,11 @@ Lit-UI/
 └── trash/                 # Deleted chats
 ```
 ## 🛡 Security Notes
-API keys are never hardcoded — you must provide your own in config.cfg
-config.cfg is ignored via .gitignore so it’s never uploaded to GitHub
-AI responses are HTML-sanitized before rendering to prevent malicious injection
-Uploaded files are stored locally and never sent anywhere except the AI APIs you use
-No arbitrary code execution from user input
+API keys are never hardcoded — you must provide your own in config.cfg  
+config.cfg is ignored via .gitignore so it’s never uploaded to GitHub  
+AI responses are HTML-sanitized before rendering to prevent malicious injection  
+Uploaded files are stored locally and never sent anywhere except the AI APIs you use  
+No arbitrary code execution from user input  
 
 
 ## 📌 Roadmap
