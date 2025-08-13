@@ -99,7 +99,7 @@ No arbitrary code execution from user input
 - 📊 Richer CSV analytics in responses
 
 ## 📜 Changelog
-### v1.1.0 — 2024-06-xx
+### v1.1.0 — 2025-08-13
 - Added renaming of saved conversations
 - Added active conversation ✅ indicator
 - Added Trash tab with preview, restore, and permanent delete
