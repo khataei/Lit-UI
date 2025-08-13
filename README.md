@@ -31,15 +31,15 @@ cd Lit-UI
 pip install -r requirements.txt
 ```
 
-=## 🔑 Setting Up Your API Keys
+## 🔑 Setting Up Your API Keys
 
 Lit‑UI needs your own API keys for OpenAI, Azure OpenAI, or OpenRouter.  
 These keys are stored in a file called `config.cfg` which **must never** be uploaded to GitHub.
 
-### 1. Locate the example config file
-In the project folder, you’ll find:
-`config_example.cfg`
-Open config.cfg in any text editor (VS Code, Notepad, etc.) and replace the placeholder text with your real API keys and endpoints.
+
+- In the project folder, you’ll find: `config_example.cfg`  
+- Rename this file to `config.cfg`  
+- Open `config.cfg` in any text editor and replace the placeholder text with your real API keys and endpoints.
 
 
 
@@ -95,7 +95,6 @@ No arbitrary code execution from user input
 - 🔊 Text-to-speech for AI responses
 - 🖼 AI image generation integration
 - 📊 Richer CSV analytics in responses
-- 📜 License
 
 
 This project is licensed under the MIT License — see the LICENSE file for details.
