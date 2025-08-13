@@ -45,8 +45,9 @@ Open in your browser:
 http://localhost:8501
 
 ## ⚙️ Config File Example
-config.cfg (not committed to GitHub — keep your keys secret)
+`config.cfg` (**not committed to GitHub — keep your keys secret**)
 
+```ini
 [API_KEYS]
 GPT4O_AZURE_API_KEY = your_gpt4o_key
 GPT4O_AZURE_API_URL = https://your-azure-endpoint
@@ -59,9 +60,11 @@ GPT4.1_AZURE_API_VERSION = 2024-xx-xx
 GPT5_API_VERSION = 2024-xx-xx
 
 OR_API_KEY = your_openrouter_key
+```
 
 
 ## 📂 Project Structure
+```ini
 Lit-UI/
 ├── app.py                 # Main Streamlit app
 ├── config_example.cfg     # Template config file
@@ -71,7 +74,7 @@ Lit-UI/
 ├── .gitignore             # Ignore secrets & cache files
 ├── chats/                 # Saved conversation history
 └── trash/                 # Deleted chats
-
+```
 ## 🛡 Security Notes
 API keys are never hardcoded — you must provide your own in config.cfg
 config.cfg is ignored via .gitignore so it’s never uploaded to GitHub
