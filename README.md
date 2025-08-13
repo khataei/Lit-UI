@@ -3,8 +3,11 @@
 A lightweight, Streamlit-based multi-LLM web interface for **OpenAI**, **Azure OpenAI**, and **OpenRouter**.  
 Chat with powerful language models, upload files (CSV, TXT, images) for contextual AI responses, customize prompts, and manage your conversation history — all in one elegant UI.
 
-![Uploading image.png…]()
+## 📸 Screenshot
 
+Here’s what the app looks like in action:
+
+![Lit-UI Screenshot](docs/Lit-UI.png)
 ---
 
 ## 🚀 Features
