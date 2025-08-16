@@ -11,7 +11,7 @@ import base64
 import html
 
 
-page_icon = '3.jpeg' #'🤖' 
+page_icon = '.\assets\fox-icon.png' #'🤖' 
 page_layout = 'wide'
 page_title = 'CarfaxGPT'
 st.set_page_config(page_title=page_title, page_icon=page_icon, layout=page_layout)
@@ -26,7 +26,7 @@ api_url_4_1 = config.get('API_KEYS', 'GPT4.1_AZURE_API_URL')
 api_version= config.get('API_KEYS', 'GPT4O_AZURE_API_VERSION')
 api_version_4_1= config.get('API_KEYS', 'GPT4.1_AZURE_API_VERSION')
 api_version_5= config.get('API_KEYS', 'GPT5_API_VERSION')
-api_key_or= config.get('API_KEYS', 'OR_API_KEY')
+# api_key_or= config.get('API_KEYS', 'OR_API_KEY')
 deployment = None
 
 
@@ -172,12 +172,34 @@ def load_conversation(filename):
     return messages
 
 def read_file_content(uploaded_file):
+    # CSV
     if uploaded_file.type == "text/csv":
         df = pd.read_csv(uploaded_file)
         return df.to_string()
+
+    # TXT
     elif uploaded_file.type == "text/plain":
         return uploaded_file.getvalue().decode('utf-8')
+
+    # PDF
+    elif uploaded_file.type == "application/pdf":
+        pdf_reader = PdfReader(uploaded_file)
+        text = ""
+        for page in pdf_reader.pages:
+            if page.extract_text():
+                text += page.extract_text() + "\n"
+        return text
+
+    # Excel
+    elif uploaded_file.type in [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel"
+    ]:
+        df = pd.read_excel(uploaded_file)
+        return df.to_string()
+
     return None
+
 def list_trash_conversations():
     files = [f for f in os.listdir(TRASH_FOLDER) if f.endswith(".json")]
     files.sort(key=lambda f: os.path.getmtime(os.path.join(TRASH_FOLDER, f)), reverse=True)
@@ -224,13 +246,6 @@ with st.sidebar:
         "GPT-4.1": "gpt-4.1",
         "GPT-5-Chat": "gpt-5-chat",
         "GPT-5-Mini": "gpt-5-mini",
-        "O4 Mini High": "o4-mini-high",
-        "R1" : "deepseek/deepseek-r1-0528:free",
-        "Claude 3.7 Sonnet": "anthropic/claude-3.7-sonnet", 
-        "Claude 3.7 Sonnet (Thinking)": "anthropic/claude-3.7-sonnet:thinking",
-        "Sonnet 4": "anthropic/claude-sonnet-4",
-        "Grok 4": "x-ai/grok-4",
-        "Qwen 3": "qwen/qwen3-coder",
     }
 
     # Display the friendly names in the radio button
@@ -257,17 +272,6 @@ if (deployment == "gpt-4.1") :
     azure_endpoint=api_url_4_1,
     api_version=api_version_4_1,
 )
-elif (deployment=='anthropic/claude-3.7-sonnet' or  # all from openrouter
-    deployment=='anthropic/claude-3.7-sonnet:thinking' or 
-    deployment=='o4-mini-high' or 
-    deployment == 'deepseek/deepseek-r1-0528:free' or
-    deployment =='anthropic/claude-sonnet-4' or
-    deployment =='qwen/qwen3-coder' or
-    deployment =='x-ai/grok-4'):
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key_or,
-        )
 elif (deployment == "gpt-5-chat") or (deployment == "gpt-5-mini"):    # both have the same key as 4.1
     client = AzureOpenAI(
     api_key=api_key_4_1,
@@ -293,7 +297,32 @@ if "messages" not in st.session_state:
 
 
 
-        
+col1, col2 = st.sidebar.columns(2)
+# Download button
+if col1.button("📥 Download Chat"):
+    if len(st.session_state.messages) > 1:
+        conversation_text = format_conversation_for_download(st.session_state.messages)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        st.sidebar.download_button(
+            label="Download Chat",
+            data=conversation_text,
+            file_name=f"carfax_chat_{timestamp}.txt",
+            mime="text/plain",
+            key="download_conversation"
+        )
+    else:
+        st.sidebar.info("Start a conversation before downloading.")
+# Clear button
+if col2.button("📝 New Chat"):
+    st.session_state.messages = [{"role": "assistant", 
+                                "content": "Hello! You can upload CSV or TXT files and ask me questions about them."}]
+    st.session_state['file_contents'] = {}
+    try:
+        del st.session_state['chat_filename']
+    except:
+        print("No file name")
+    st.rerun()
+     
 # Sidebar tabs
 tab_convos, tab_settings, tab_uploads, tab_trash = st.sidebar.tabs([
     "💾 History", 
@@ -318,10 +347,10 @@ with tab_settings:
 
 with tab_uploads:
     uploaded_files = st.file_uploader(
-        "Upload your files (CSV, TXT, or Images)",
-        type=['csv', 'txt', 'jpg', 'jpeg', 'png', 'gif', 'webp'],
-        accept_multiple_files=True
-    )
+    "Upload your files (CSV, TXT, PDF, Excel, or Images)",
+    type=['csv', 'txt', 'pdf', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp'],
+    accept_multiple_files=True
+)
 
     if uploaded_files:
         for uploaded_file in uploaded_files:
@@ -338,7 +367,24 @@ with tab_uploads:
                                 st.dataframe(df)
                             else:
                                 st.text(file_content[:1000] + "..." if len(file_content) > 1000 else file_content)
+                elif uploaded_file.type == "application/pdf":
+                    file_content = read_file_content(uploaded_file)
+                    if file_content:
+                        st.session_state['file_contents'][uploaded_file.name] = file_content
+                        with st.expander(f"Preview {uploaded_file.name}"):
+                            st.text(file_content[:1000] + "..." if len(file_content) > 1000 else file_content)
 
+                elif uploaded_file.type in [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.ms-excel"
+                ]:
+                    file_content = read_file_content(uploaded_file)
+                    if file_content:
+                        st.session_state['file_contents'][uploaded_file.name] = file_content
+                        with st.expander(f"Preview {uploaded_file.name}"):
+                            uploaded_file.seek(0)
+                            df = pd.read_excel(uploaded_file)
+                            st.dataframe(df)
                 elif uploaded_file.type.startswith("image/"):
                     encoded_image = encode_image_file(uploaded_file)
                     st.session_state['file_contents'][uploaded_file.name] = {
@@ -478,32 +524,6 @@ with tab_trash:
         st.info("Trash is empty.")
 
 
-# Add global buttons to the sidebar ("Download", "Clear History") AFTER tabs
-col1, col2 = st.sidebar.columns(2)
-# Download button
-if col1.button("📥 Download Conversation"):
-    if len(st.session_state.messages) > 1:
-        conversation_text = format_conversation_for_download(st.session_state.messages)
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        st.sidebar.download_button(
-            label="Download Chat",
-            data=conversation_text,
-            file_name=f"carfax_chat_{timestamp}.txt",
-            mime="text/plain",
-            key="download_conversation"
-        )
-    else:
-        st.sidebar.info("Start a conversation before downloading.")
-# Clear button
-if col2.button("📝 New Chat"):
-    st.session_state.messages = [{"role": "assistant", 
-                                "content": "Hello! You can upload CSV or TXT files and ask me questions about them."}]
-    st.session_state['file_contents'] = {}
-    try:
-        del st.session_state['chat_filename']
-    except:
-        print("No file name")
-    st.rerun()
 
 # PRint chats
 for idx, msg in enumerate(st.session_state.messages):
