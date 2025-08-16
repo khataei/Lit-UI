@@ -11,7 +11,7 @@ import base64
 import html
 
 
-page_icon = '.\assets\fox-icon.png' #'🤖' 
+page_icon = 'assets/fox-icon.png' #'🤖' 
 page_layout = 'wide'
 page_title = 'CarfaxGPT'
 st.set_page_config(page_title=page_title, page_icon=page_icon, layout=page_layout)
